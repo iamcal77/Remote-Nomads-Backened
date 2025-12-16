@@ -1,0 +1,28 @@
+fastapi
+uvicorn[standard]
+
+# Database
+sqlalchemy>=2.0
+psycopg2-binary
+alembic
+
+# Auth & Security
+python-jose[cryptography]
+passlib[bcrypt]
+authlib
+
+# Validation & Config
+pydantic-settings
+python-dotenv
+
+# File Uploads
+python-multipart
+
+# HTTP Requests
+httpx
+requests
+
+# CV Parsing (optional start)
+spacy
+pdfplumber
+python-docx
