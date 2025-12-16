@@ -2,8 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.dependencies.roles import require_role
+from app.models.application import Application
 from app.models.candidate_profile import CandidateProfile
 from app.dependencies.auth import get_current_user
+from app.schemas.application import ApplicationResponse
 from app.schemas.candidate_profile import CandidateProfileCreate, CandidateProfileResponse
 from app.utils.file_upload import save_file
 from fastapi import UploadFile, File
@@ -47,18 +50,30 @@ def create_or_update_profile(
         "id": profile.id
     }
 
+#get my applications
+@router.get("/my-applications", response_model=list[ApplicationResponse])
+def my_applications(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_role("candidate"))
+):
+    return (
+        db.query(Application)
+        .filter(Application.user_id == current_user["user_id"])
+        .all()
+    )
 
+
+# cv uoload endpoint
 @router.post("/profile/upload-cv")
 def upload_cv(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    user_id = current_user.get("user_id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid token")
+    profile = db.query(CandidateProfile).filter_by(
+        user_id=current_user["user_id"]
+    ).first()
 
-    profile = db.query(CandidateProfile).filter_by(user_id=user_id).first()
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
@@ -67,7 +82,4 @@ def upload_cv(
 
     db.commit()
 
-    return {
-        "message": "CV uploaded successfully",
-        "cv_path": path
-    }
+    return {"cv_path": path}

@@ -17,40 +17,39 @@ def apply_for_job(
     current_user: dict = Depends(require_role("candidate"))
 ):
     user_id = current_user["user_id"]
-    application = Application(user_id=user_id, job_id=payload.job_id)
+
+    profile = db.query(CandidateProfile).filter_by(user_id=user_id).first()
+    if not profile:
+        raise HTTPException(
+            status_code=400,
+            detail="Please create your candidate profile before applying"
+        )
+
+    application = Application(
+        user_id=user_id,
+        job_id=payload.job_id,
+        candidate_profile_id=profile.id
+    )
+
     db.add(application)
     db.commit()
     db.refresh(application)
-    return {
-        "message": "Application submitted successfully",
-        "application_id": application.id,
-        "status": application.status
-    }
+
+    return application
+
 
 # Internal users view applications for a job
 @router.get("/jobs/{job_id}", response_model=list[ApplicationResponse])
-def get_applications_for_job(job_id: int, db: Session = Depends(get_db)):
-    applications = db.query(Application).filter(Application.job_id == job_id).all()
+def get_applications_for_job(
+    job_id: int,
+    db: Session = Depends(get_db)
+):
+    applications = (
+        db.query(Application)
+        .filter(Application.job_id == job_id)
+        .all()
+    )
+    return applications
 
-    result = []
-    for app in applications:
-        candidate_profile_data = app.candidate_profile or {}
-        candidate_profile = CandidateProfileResponse(
-            id=app.id,  # or proper candidate_profile ID
-            industry=candidate_profile_data.get("industry", ""),
-            timezone=candidate_profile_data.get("timezone"),
-            skills=candidate_profile_data.get("skills"),
-            salary_expectation=candidate_profile_data.get("salary_expectation"),
-            cv_path=candidate_profile_data.get("cv_path"),
-        )
-        result.append(ApplicationResponse(
-            id=app.id,
-            user_id=app.user_id,
-            job_id=app.job_id,
-            status=app.status,
-            candidate_profile=candidate_profile
-        ))
-
-    return result
 
 

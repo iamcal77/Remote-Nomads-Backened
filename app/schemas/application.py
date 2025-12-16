@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel
 
 class ApplicationCreate(BaseModel):
@@ -19,7 +20,7 @@ class ApplicationResponse(BaseModel):
     user_id: int
     job_id: int
     status: str
-    candidate_profile: CandidateProfileResponse  # include nested profile
+    candidate_profile: Optional[CandidateProfileResponse] = None # include nested profile
 
     class Config:
         orm_mode = True
