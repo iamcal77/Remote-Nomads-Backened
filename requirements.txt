@@ -10,7 +10,7 @@ alembic
 python-jose[cryptography]
 passlib[bcrypt]
 authlib
-
+argon2-cffi
 # Validation & Config
 pydantic-settings
 python-dotenv
