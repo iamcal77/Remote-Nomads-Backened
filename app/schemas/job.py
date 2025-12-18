@@ -11,6 +11,7 @@ class JobCreate(BaseModel):
     salary_range: Optional[str]
     timezone: Optional[str]
     expiry_date: Optional[date]
+    location: Optional[str]
 
 # Output schema for API responses
 class JobResponse(BaseModel):
@@ -24,6 +25,7 @@ class JobResponse(BaseModel):
     timezone: Optional[str] = None
     expiry_date: date
     status: str
+    location: Optional[str] = None
 
     class Config:
         orm_mode = True 

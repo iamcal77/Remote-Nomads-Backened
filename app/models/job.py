@@ -21,3 +21,6 @@ class Job(Base):
     timezone = Column(String)
     expiry_date = Column(Date)
     status = Column(Enum(JobStatus), default=JobStatus.draft)
+    location = Column(String)
+    created_at = Column(Date, server_default="now()")
+    updated_at = Column(Date, server_default="now()", onupdate="now()")

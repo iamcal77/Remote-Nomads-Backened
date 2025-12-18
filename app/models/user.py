@@ -15,3 +15,7 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
     role = Column(Enum(UserRole), nullable=False)
+    full_name = Column(String, nullable=True)
+    status = Column(String, default="active")
+    created_at = Column(String, nullable=True)
+    updated_at = Column(String, nullable=True)

@@ -13,27 +13,42 @@ router = APIRouter()
 
 # -------------------- CREATE USER --------------------
 @router.post("/", response_model=dict)
-def create_user(user: UserCreate, db: Session = Depends(get_db), current_user=Depends(require_role("admin"))):
+def create_user(
+    user: UserCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_role("admin"))
+):
     # Check if user already exists
     existing = db.query(User).filter(User.email == user.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="User already exists")
 
     new_user = User(
+        full_name=user.full_name,     # ✅ FIX
         email=user.email,
         password=hash_password(user.password),
-        role=user.role
+        role=user.role,
+        status=user.status or "active"  # ✅ FIX (safe default)
     )
+
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return {"id": new_user.id, "email": new_user.email, "role": new_user.role}
+
+    return {
+        "id": new_user.id,
+        "email": new_user.email,
+        "role": new_user.role,
+        "full_name": new_user.full_name,
+        "status": new_user.status
+    }
+
 
 # -------------------- GET ALL USERS --------------------
 @router.get("/", response_model=List[dict])
 def list_users(db: Session = Depends(get_db), current_user=Depends(require_role("admin"))):
     users = db.query(User).all()
-    return [{"id": u.id, "email": u.email, "role": u.role} for u in users]
+    return [{"id": u.id, "email": u.email, "role": u.role, "full_name":u.full_name, "status":u.status} for u in users]
 
 # -------------------- GET USER BY ID --------------------
 @router.get("/{user_id}", response_model=dict)

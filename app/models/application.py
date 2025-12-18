@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Date, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -8,6 +8,8 @@ class Application(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     job_id = Column(Integer, ForeignKey("jobs.id"), nullable=False)
+    created_at = Column(Date, server_default="now()")
+    updated_at = Column(Date, server_default="now()", onupdate="now()")
 
     # ✅ THIS COLUMN WAS MISSING
     candidate_profile_id = Column(

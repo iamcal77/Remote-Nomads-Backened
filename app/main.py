@@ -10,8 +10,8 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://127.0.0.1:5500",
-        "http://206.189.26.129:8080"
+    "http://localhost:3000",
+    "http://remote-nomads-careers.206.189.26.129.nip.io"
     ],
     allow_credentials=True,
     allow_methods=["*"],

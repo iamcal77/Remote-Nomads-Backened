@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Optional
 from pydantic import BaseModel
 
@@ -20,7 +21,11 @@ class ApplicationResponse(BaseModel):
     user_id: int
     job_id: int
     status: str
-    candidate_profile: Optional[CandidateProfileResponse] = None # include nested profile
+    full_name: Optional[str] = None
+    cv_path: Optional[str] = None
+    applied_at: date
+    
+    
 
     class Config:
         orm_mode = True

@@ -13,6 +13,7 @@ class CandidateProfile(Base):
     skills = Column(Text, nullable=True)
     salary_expectation = Column(String, nullable=True)
     cv_path = Column(String, nullable=True)
+    user = relationship("User")
 
     applications = relationship(
         "Application",
