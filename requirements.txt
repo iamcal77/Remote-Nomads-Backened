@@ -14,6 +14,7 @@ authlib
 # Validation & Config
 pydantic-settings
 python-dotenv
+email-validator
 
 # File Uploads
 python-multipart
