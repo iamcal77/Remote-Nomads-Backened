@@ -11,7 +11,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
     "http://localhost:3000",
-    "http://remote-nomads-careers.206.189.26.129.nip.io"
+    "https://remote-nomads.netlify.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
