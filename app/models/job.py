@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, Enum, Date
 from app.core.database import Base
 import enum
+from sqlalchemy.orm import relationship
 
 class JobStatus(str, enum.Enum):
     draft = "draft"
@@ -24,3 +25,4 @@ class Job(Base):
     location = Column(String)
     created_at = Column(Date, server_default="now()")
     updated_at = Column(Date, server_default="now()", onupdate="now()")
+    applications = relationship("Application", back_populates="job")  # <- add this

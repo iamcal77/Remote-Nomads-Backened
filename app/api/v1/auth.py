@@ -9,7 +9,6 @@ router = APIRouter()
 
 @router.post("/register")
 def register(request: RegisterRequest, db: Session = Depends(get_db)):
-    # Ensure role is valid
     try:
         role_enum = UserRole(request.role.lower())
     except ValueError:
@@ -18,11 +17,16 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     user = User(
         email=request.email,
         password=hash_password(request.password),
-        role=role_enum
+        role=role_enum,
+        full_name=request.full_name  # ✅ ADD THIS
     )
+
     db.add(user)
     db.commit()
+    db.refresh(user)
+
     return {"message": "User registered"}
+
 
 
 @router.post("/login")

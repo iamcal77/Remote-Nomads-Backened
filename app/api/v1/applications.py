@@ -1,4 +1,6 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.application import Application
@@ -7,6 +9,8 @@ from app.schemas.application import ApplicationCreate, ApplicationResponse, Cand
 from app.dependencies.auth import get_current_user
 from app.dependencies.roles import require_role
 from sqlalchemy.orm import joinedload
+
+from app.schemas.application_admin import AdminApplicationResponse
 
 
 router = APIRouter()
@@ -55,37 +59,68 @@ def apply_for_job(
 
 
 # Internal users view applications for a job
-@router.get("/jobs/{job_id}/applications", response_model=list[ApplicationResponse])
-def get_applications_for_job(job_id: int, db: Session = Depends(get_db)):
+@router.get("/", response_model=list[AdminApplicationResponse])
+def admin_view_all_applications(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_role("admin"))
+):
+    # Fetch all applications with candidate profile, user, and job
     applications = (
         db.query(Application)
         .options(
-            joinedload(Application.candidate_profile).joinedload(CandidateProfile.user)
+            joinedload(Application.candidate_profile)
+            .joinedload(CandidateProfile.user),
+            joinedload(Application.job)  # load job relationship
         )
-        .filter(Application.job_id == job_id)
         .all()
     )
 
-    result = []
+    results = []
     for app in applications:
-        candidate = app.candidate_profile
-        user = candidate.user if candidate else None
+        profile = app.candidate_profile
+        user = profile.user if profile else None
+        job = app.job
 
-        # skip if missing data
-        if not user or not candidate:
+        if not profile or not user or not job:
             continue
 
-        result.append({
-            "id": app.id,                        # use 'id' instead of 'application_id'
-            "user_id": app.user_id,
+        results.append({
+            "application_id": app.id,
             "job_id": app.job_id,
-            "status": app.status,                # include status
+            "job_title": job.title,  # include job name
+            "status": app.status,
+            "applied_at": app.created_at,
             "full_name": user.full_name,
-            "cv_path": candidate.cv_path,
-            "applied_at": app.created_at
+            "email": user.email,
+            "industry": profile.industry,
+            "skills": profile.skills,
+            "salary_expectation": profile.salary_expectation,
+            "cv_path": profile.cv_path
         })
 
-    return result
+    return results
 
+@router.get("/cv/{application_id}")
+def download_cv(
+    application_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_role("admin"))
+):
+    application = (
+        db.query(Application)
+        .options(joinedload(Application.candidate_profile))
+        .filter(Application.id == application_id)
+        .first()
+    )
+
+    if not application or not application.candidate_profile:
+        raise HTTPException(status_code=404, detail="CV not found")
+
+    path = application.candidate_profile.cv_path
+
+    if not path or not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="CV file missing")
+
+    return FileResponse(path, filename=os.path.basename(path))
 
 

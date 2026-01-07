@@ -10,6 +10,8 @@ class Application(Base):
     job_id = Column(Integer, ForeignKey("jobs.id"), nullable=False)
     created_at = Column(Date, server_default="now()")
     updated_at = Column(Date, server_default="now()", onupdate="now()")
+    job = relationship("Job", back_populates="applications")
+
 
     # ✅ THIS COLUMN WAS MISSING
     candidate_profile_id = Column(
@@ -25,3 +27,4 @@ class Application(Base):
         "CandidateProfile",
         back_populates="applications"
     )
+

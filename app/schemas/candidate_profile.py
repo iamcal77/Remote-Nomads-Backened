@@ -13,6 +13,8 @@ class CandidateProfileResponse(BaseModel):
     skills: str | None = None
     salary_expectation: str | None = None
     cv_path: str | None = None
+    full_name: str | None = None
+    email: str 
 
     class Config:
         from_attributes = True  # <-- allows SQLAlchemy model to pydantic conversion

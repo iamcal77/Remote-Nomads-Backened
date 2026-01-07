@@ -12,6 +12,7 @@ class JobCreate(BaseModel):
     timezone: Optional[str]
     expiry_date: Optional[date]
     location: Optional[str]
+    status: Optional[str]
 
 # Output schema for API responses
 class JobResponse(BaseModel):
