@@ -4,7 +4,7 @@ from typing import List
 
 from app.core.database import get_db
 from app.models.user import User, UserRole
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserUpdate
 from app.dependencies.auth import get_current_user
 from app.dependencies.roles import require_role
 from app.core.security import hash_password
@@ -60,14 +60,15 @@ def get_user(user_id: int, db: Session = Depends(get_db), current_user=Depends(r
 
 # -------------------- UPDATE USER --------------------
 @router.put("/{user_id}", response_model=dict)
-def update_user(user_id: int, updated_user: UserCreate, db: Session = Depends(get_db), current_user=Depends(require_role("admin"))):
+def update_user(user_id: int, updated_user: UserUpdate, db: Session = Depends(get_db), current_user=Depends(require_role("admin"))):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     user.email = updated_user.email
-    user.password = hash_password(updated_user.password)
     user.role = updated_user.role
+    user.full_name = updated_user.full_name
+    user.status = updated_user.status
     db.commit()
     db.refresh(user)
     return {"id": user.id, "email": user.email, "role": user.role}

@@ -24,8 +24,10 @@ class ApplicationResponse(BaseModel):
     full_name: Optional[str] = None
     cv_path: Optional[str] = None
     applied_at: date
-    
-    
+  
 
     class Config:
         orm_mode = True
+
+class StatusUpdateRequest(BaseModel):
+    status: str

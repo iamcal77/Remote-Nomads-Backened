@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Date, Integer, String, ForeignKey
+from sqlalchemy import Column, Date, Integer, String, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -11,20 +11,17 @@ class Application(Base):
     created_at = Column(Date, server_default="now()")
     updated_at = Column(Date, server_default="now()", onupdate="now()")
     job = relationship("Job", back_populates="applications")
-
-
-    # ✅ THIS COLUMN WAS MISSING
     candidate_profile_id = Column(
         Integer,
         ForeignKey("candidate_profiles.id"),
         nullable=False
     )
-
     status = Column(String, default="applied")
-
-    # ✅ RELATIONSHIP
     candidate_profile = relationship(
         "CandidateProfile",
         back_populates="applications"
+    )
+    __table_args__ = (
+        UniqueConstraint("user_id", "job_id", name="uq_user_job_application"),
     )
 

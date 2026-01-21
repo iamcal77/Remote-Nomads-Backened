@@ -1,3 +1,4 @@
+import mimetypes
 import os
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
@@ -5,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.application import Application
 from app.models.candidate_profile import CandidateProfile
-from app.schemas.application import ApplicationCreate, ApplicationResponse, CandidateProfileResponse
+from app.schemas.application import ApplicationCreate, ApplicationResponse, CandidateProfileResponse, StatusUpdateRequest
 from app.dependencies.auth import get_current_user
 from app.dependencies.roles import require_role
 from sqlalchemy.orm import joinedload
@@ -24,15 +25,26 @@ def apply_for_job(
 ):
     user_id = current_user["user_id"]
 
-    # Get candidate profile
     profile = db.query(CandidateProfile).filter_by(user_id=user_id).first()
     if not profile:
+        raise HTTPException(400, "Please create your candidate profile before applying")
+
+    #  Prevent re-application
+    existing_application = (
+        db.query(Application)
+        .filter(
+            Application.user_id == user_id,
+            Application.job_id == payload.job_id
+        )
+        .first()
+    )
+
+    if existing_application:
         raise HTTPException(
             status_code=400,
-            detail="Please create your candidate profile before applying"
+            detail="You have already applied for this job"
         )
 
-    # Create application
     application = Application(
         user_id=user_id,
         job_id=payload.job_id,
@@ -43,18 +55,16 @@ def apply_for_job(
     db.commit()
     db.refresh(application)
 
-    # Map to response
-    response = {
+    return {
         "id": application.id,
         "user_id": application.user_id,
         "job_id": application.job_id,
         "status": application.status,
-        "full_name": profile.user.full_name,   # get from user relationship
+        "full_name": profile.user.full_name,
         "cv_path": profile.cv_path,
         "applied_at": application.created_at
     }
 
-    return response
 
 
 
@@ -77,6 +87,7 @@ def admin_view_all_applications(
 
     results = []
     for app in applications:
+        print("Here is me",app.job_id,app.job)
         profile = app.candidate_profile
         user = profile.user if profile else None
         job = app.job
@@ -88,7 +99,7 @@ def admin_view_all_applications(
             "application_id": app.id,
             "job_id": app.job_id,
             "job_title": job.title,  # include job name
-            "status": app.status,
+            "status":"pending",
             "applied_at": app.created_at,
             "full_name": user.full_name,
             "email": user.email,
@@ -100,7 +111,7 @@ def admin_view_all_applications(
 
     return results
 
-@router.get("/cv/{application_id}")
+@router.get("/cv/{application_id}/download")
 def download_cv(
     application_id: int,
     db: Session = Depends(get_db),
@@ -123,4 +134,53 @@ def download_cv(
 
     return FileResponse(path, filename=os.path.basename(path))
 
+@router.get("/cv/{application_id}/view")
+def view_cv(
+    application_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_role("admin"))
+):
+    application = (
+        db.query(Application)
+        .options(joinedload(Application.candidate_profile))
+        .filter(Application.id == application_id)
+        .first()
+    )
 
+    if not application or not application.candidate_profile:
+        raise HTTPException(404, "CV not found")
+
+    path = application.candidate_profile.cv_path
+    if not path or not os.path.exists(path):
+        raise HTTPException(404, "CV file missing")
+
+    media_type, _ = mimetypes.guess_type(path)
+
+    return FileResponse(
+        path,
+        media_type=media_type or "application/pdf",
+        headers={
+            "Content-Disposition": "inline"
+        }
+    )
+
+@router.patch("/{application_id}/status")
+def update_application_status(
+    application_id: int,
+    payload: StatusUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_role("admin", "recruiter"))
+):
+    app = db.query(Application).filter(Application.id == application_id).first()
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    allowed_statuses = ["pending", "reviewed", "shortlisted", "accepted", "rejected"]
+    if payload.status not in allowed_statuses:
+        raise HTTPException(status_code=400, detail="Invalid status")
+
+    app.status = payload.status
+    db.commit()
+    db.refresh(app)
+
+    return {"application_id": app.id, "status": app.status}

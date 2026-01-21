@@ -27,9 +27,20 @@ class JobResponse(BaseModel):
     expiry_date: date
     status: str
     location: Optional[str] = None
+    created_at: date
 
     class Config:
         orm_mode = True 
 
-class JobStatusUpdate(BaseModel):
+class JobUpdate(BaseModel):
+    title: Optional[str]
+    description: Optional[str]
     status: str
+    client_name: Optional[str]
+    industry: Optional[str]
+    skills: Optional[str]
+    salary_range: Optional[str]
+    timezone: Optional[str]
+    expiry_date: Optional[date]
+    location: Optional[str]
+    

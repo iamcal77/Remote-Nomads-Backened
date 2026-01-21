@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.job import Job
-from app.schemas.job import JobCreate, JobResponse, JobStatusUpdate
+from app.schemas.job import JobCreate, JobResponse, JobUpdate
 from app.dependencies.roles import require_role
 
 router = APIRouter()
@@ -21,10 +21,10 @@ def create_job(
     return db_job
 
 # Update job status (Admin only)
-@router.patch("/{job_id}/status")
+@router.put("/{job_id}/jobs")
 def update_job_status(
     job_id: int,
-    status_update: JobStatusUpdate,  # JSON body
+    status_update: JobUpdate,  # JSON body
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_role("admin"))
 ):
@@ -32,7 +32,16 @@ def update_job_status(
     if not db_job:
         raise HTTPException(status_code=404, detail="Job not found")
     
-    db_job.status = status_update.status  # get status from JSON
+    db_job.status = status_update.status
+    db_job.title = status_update.title or db_job.title
+    db_job.description = status_update.description or db_job.description
+    db_job.client_name = status_update.client_name or db_job.client_name
+    db_job.industry = status_update.industry or db_job.industry
+    db_job.skills = status_update.skills or db_job.skills
+    db_job.salary_range = status_update.salary_range or db_job.salary_range
+    db_job.timezone = status_update.timezone or db_job.timezone
+    db_job.expiry_date = status_update.expiry_date or db_job.expiry_date
+    db_job.location = status_update.location or db_job.location
     db.commit()
     db.refresh(db_job)
     
