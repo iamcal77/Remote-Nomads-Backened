@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
+from app.models.application import Application
 from app.models.job import Job
 from app.schemas.job import JobCreate, JobResponse, JobUpdate
 from app.dependencies.roles import require_role
@@ -49,8 +50,35 @@ def update_job_status(
 
 # List all jobs (any authenticated user)
 @router.get("/", response_model=list[JobResponse])
-def list_jobs(db: Session = Depends(get_db), current_user: dict = Depends(require_role("admin","recruiter","manager","candidate"))):
-    return db.query(Job).all()
+def list_jobs(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_role(
+        "admin", "recruiter", "manager", "candidate"
+    ))
+):
+    jobs = db.query(Job).all()
+
+    # Default: no applied info
+    applied_job_ids = set()
+
+    # Only candidates need hasApplied
+    if current_user["role"] == "candidate":
+        user_id = current_user["user_id"]
+
+        applied_job_ids = {
+            job_id for (job_id,) in
+            db.query(Application.job_id)
+            .filter(Application.user_id == user_id)
+            .all()
+        }
+
+    return [
+        {
+            **job.__dict__,
+            "hasApplied": job.id in applied_job_ids
+        }
+        for job in jobs
+    ]
 
 # Get a job by ID (any authenticated user)
 @router.get("/{job_id}", response_model=JobResponse)

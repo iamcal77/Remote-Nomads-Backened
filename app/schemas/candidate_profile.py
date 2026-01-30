@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel
 
 class CandidateProfileCreate(BaseModel):
@@ -18,3 +19,13 @@ class CandidateProfileResponse(BaseModel):
 
     class Config:
         from_attributes = True  # <-- allows SQLAlchemy model to pydantic conversion
+
+class CandidateJobStatusResponse(BaseModel):
+    application_id: int
+    job_id: int
+    job_title: str
+    status: str
+    applied_at: datetime
+
+    class Config:
+        from_attributes = True

@@ -16,7 +16,7 @@ class Application(Base):
         ForeignKey("candidate_profiles.id"),
         nullable=False
     )
-    status = Column(String, default="applied")
+    status = Column(String, default="pending")
     candidate_profile = relationship(
         "CandidateProfile",
         back_populates="applications"

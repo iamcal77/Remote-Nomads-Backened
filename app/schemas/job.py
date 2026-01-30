@@ -28,7 +28,8 @@ class JobResponse(BaseModel):
     status: str
     location: Optional[str] = None
     created_at: date
-
+    hasApplied: Optional[bool] = False
+    
     class Config:
         orm_mode = True 
 

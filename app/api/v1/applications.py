@@ -12,6 +12,7 @@ from app.dependencies.roles import require_role
 from sqlalchemy.orm import joinedload
 
 from app.schemas.application_admin import AdminApplicationResponse
+from app.schemas.candidate_profile import CandidateJobStatusResponse
 
 
 router = APIRouter()
@@ -99,7 +100,7 @@ def admin_view_all_applications(
             "application_id": app.id,
             "job_id": app.job_id,
             "job_title": job.title,  # include job name
-            "status":"pending",
+            "status":app.status,
             "applied_at": app.created_at,
             "full_name": user.full_name,
             "email": user.email,
@@ -184,3 +185,30 @@ def update_application_status(
     db.refresh(app)
 
     return {"application_id": app.id, "status": app.status}
+
+
+@router.get("/candidate/dashboard", response_model=list[CandidateJobStatusResponse])
+def candidate_dashboard(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_role("candidate"))
+):
+    user_id = current_user["user_id"]
+
+    applications = (
+        db.query(Application)
+        .options(joinedload(Application.job))
+        .filter(Application.user_id == user_id)
+        .order_by(Application.created_at.desc())
+        .all()
+    )
+
+    return [
+        {
+            "application_id": app.id,
+            "job_id": app.job_id,
+            "job_title": app.job.title,
+            "status": app.status,
+            "applied_at": app.created_at
+        }
+        for app in applications
+    ]
