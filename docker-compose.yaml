@@ -9,4 +9,4 @@ services:
     env_file:
       - .env
     volumes:
-      - ./static/cvs
+      - ./static/cvs:/app/static/cvs
