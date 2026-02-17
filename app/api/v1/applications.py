@@ -17,7 +17,7 @@ from app.schemas.candidate_profile import CandidateJobStatusResponse
 
 
 router = APIRouter()
-BASE_DIR = Path("/app")
+BASE_DIR = Path("/app/app")
 
 # Candidate applies for a job
 @router.post("/", response_model=ApplicationResponse)
