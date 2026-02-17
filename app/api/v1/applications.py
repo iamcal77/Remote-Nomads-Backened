@@ -17,8 +17,7 @@ from app.schemas.candidate_profile import CandidateJobStatusResponse
 
 
 router = APIRouter()
-
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parents[2]  # /app
 
 # Candidate applies for a job
 @router.post("/", response_model=ApplicationResponse)
@@ -139,11 +138,7 @@ def download_cv(
     return FileResponse(path, filename=os.path.basename(path))
 
 @router.get("/cv/{application_id}/view")
-def view_cv(
-    application_id: int,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(require_role("admin"))
-):
+def view_cv(application_id: int, db: Session = Depends(get_db), current_user: dict = Depends(require_role("admin"))):
     application = (
         db.query(Application)
         .options(joinedload(Application.candidate_profile))
@@ -155,7 +150,6 @@ def view_cv(
         raise HTTPException(404, "CV not found")
 
     relative_path = application.candidate_profile.cv_path
-
     if not relative_path:
         raise HTTPException(404, "CV not found")
 
