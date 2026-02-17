@@ -1,5 +1,6 @@
 import mimetypes
 import os
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
@@ -16,6 +17,8 @@ from app.schemas.candidate_profile import CandidateJobStatusResponse
 
 
 router = APIRouter()
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Candidate applies for a job
 @router.post("/", response_model=ApplicationResponse)
@@ -151,18 +154,22 @@ def view_cv(
     if not application or not application.candidate_profile:
         raise HTTPException(404, "CV not found")
 
-    path = application.candidate_profile.cv_path
-    if not path or not os.path.exists(path):
+    relative_path = application.candidate_profile.cv_path
+
+    if not relative_path:
+        raise HTTPException(404, "CV not found")
+
+    absolute_path = BASE_DIR / relative_path
+
+    if not absolute_path.exists():
         raise HTTPException(404, "CV file missing")
 
-    media_type, _ = mimetypes.guess_type(path)
+    media_type, _ = mimetypes.guess_type(str(absolute_path))
 
     return FileResponse(
-        path,
+        str(absolute_path),
         media_type=media_type or "application/pdf",
-        headers={
-            "Content-Disposition": "inline"
-        }
+        headers={"Content-Disposition": "inline"}
     )
 
 @router.patch("/{application_id}/status")
