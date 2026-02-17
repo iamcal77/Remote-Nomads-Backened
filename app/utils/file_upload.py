@@ -1,16 +1,21 @@
-# app/utils/file_upload.py
-import os
-from fastapi import UploadFile
+from pathlib import Path
 from uuid import uuid4
+from fastapi import UploadFile
 
-def save_file(file: UploadFile, folder: str = "uploads") -> str:
-    ext = os.path.splitext(file.filename)[1]
+BASE_DIR = Path("/app/app")  # points to inner app folder
+
+def save_file(file: UploadFile, folder: str = "cvs") -> str:
+    ext = Path(file.filename).suffix
     filename = f"{uuid4().hex}{ext}"
-    folder_path = os.path.join("static", folder)
-    os.makedirs(folder_path, exist_ok=True)
-    file_path = os.path.join(folder_path, filename)
+
+    # Save under BASE_DIR/static/<folder>/
+    folder_path = BASE_DIR / "static" / folder
+    folder_path.mkdir(parents=True, exist_ok=True)
+
+    file_path = folder_path / filename
 
     with open(file_path, "wb") as f:
         f.write(file.file.read())
 
-    return file_path
+    # Return path relative to BASE_DIR for storing in DB
+    return f"static/{folder}/{filename}"
