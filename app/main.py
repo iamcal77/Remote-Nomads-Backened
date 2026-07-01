@@ -11,6 +11,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
     "http://localhost:3000",
+    "https://remote-nomads-silk.vercel.app",
     "https://remote-nomads.com"
     ],
     allow_credentials=True,
